@@ -70,13 +70,13 @@ struct drm_connector_obj {
 	struct drm_connector_obj *prev;
 
 	/* Connector id*/
-	int connector_id;
+	uint32_t connector_id;
 
 	/* The id of the connected crtc */
-	int crtc_id;
+	uint32_t crtc_id;
 
 	/* The id of the connected encoder */
-	int encoder_id;
+	uint32_t encoder_id;
 
 	/* Simple tracking id*/
 	int id;

@@ -8,6 +8,35 @@
 
 #include "modeset.h"
 
+static drmModeModeInfo retrieve_current_crtc_mode(drmModeRes *res, int fd,
+						  uint32_t crtc_id)
+{
+	int i;
+	drmModeModeInfo mode;
+	memset(&mode,0,sizeof(mode));
+	for (i = 0; i < res->count_crtcs; i++) {
+		drmModeCrtc *crtc = drmModeGetCrtc(fd, res->crtcs[i]);
+		if (crtc->crtc_id == crtc_id) {
+			printf("Found match\n");
+			mode = crtc->mode;
+			drmModeFreeCrtc(crtc);
+			return mode;
+		}
+	}
+	return mode;
+}
+
+
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Retrieve the crtc id used by this connector
+ *
+ * @Param fd the device file discriptor
+ * @Param conn drmConnector
+ *
+ * @Returns   -1 if failed otherwise the crtc id
+ */
+/* ---------------------------------------------------------------------------*/
 static int retrieve_drm_crtc_id(int *fd, drmModeConnector *conn)
 {
 	int crtc_id = 0;
@@ -37,7 +66,8 @@ static int retrieve_drm_crtc_id(int *fd, drmModeConnector *conn)
  * @Returns   0 if success, -1 if failed
  */
 /* ---------------------------------------------------------------------------*/
-static int retrieve_drm_modes(drmModeConnector *conn, struct drm_connector_obj *obj)
+static int retrieve_drm_modes(drmModeConnector *conn,
+			      struct drm_connector_obj *obj)
 {
 	int i;
 	drmModeModeInfo mode;
@@ -128,7 +158,7 @@ int init_drm_handler()
 /* ---------------------------------------------------------------------------*/
 struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 {
-	int fd,i;
+	int fd,i,retval;
 	struct drm_connector_obj *head = NULL;
 	struct drm_connector_obj *new,*tmp = NULL;
 	drmModeRes *resource = NULL;
@@ -170,19 +200,19 @@ struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 		/* Retrieve modes for this connector */
 		if (conn->connection == DRM_MODE_CONNECTED) {
 			if (retrieve_drm_modes(conn, new) < 0) {
-				logger_log(LOG_LVL_ERROR,
-					   "Failed to retrieve drm modes");
 				if (conn) drmModeFreeConnector(conn);
 				if (new) free(new);
 				continue;
 			}
-			if ((new->crtc_id = retrieve_drm_crtc_id(&fd,conn)) < 0) {
-				logger_log(LOG_LVL_ERROR,
-					   "Failed to retrieve crtc id");
+			if ((retval = retrieve_drm_crtc_id(&fd,conn)) < 0) {
 				if (conn) drmModeFreeConnector(conn);
 				if (new) free(new);
 				continue;
 			}
+			new->crtc_id = retval;
+			new->current_mode =
+				retrieve_current_crtc_mode(resource,fd,new->crtc_id);
+			printf("Current mode: %s\n",new->current_mode.name);
 		}
 		/* Cleanup drm connector */
 		if (conn) drmModeFreeConnector(conn);
