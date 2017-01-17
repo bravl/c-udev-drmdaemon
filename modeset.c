@@ -8,9 +8,28 @@
 
 #include "modeset.h"
 
+static int retrieve_drm_crtc_id(int *fd, drmModeConnector *conn)
+{
+	int crtc_id = 0;
+	drmModeEncoder *enc;
+	if (conn->count_encoders == 0 || conn->encoder_id == 0) {
+		logger_log(LOG_LVL_ERROR,"No encoders or invalid encoder id");
+		logger_log(LOG_LVL_INFO, "Probably no display connected");
+		return -1;
+	}
+	enc = drmModeGetEncoder(*fd, conn->encoders[0]);
+	if (!enc) {
+		logger_log(LOG_LVL_ERROR,"Failed to retrieve encoder");
+		return -1;
+	}
+	crtc_id = enc->crtc_id;
+	drmModeFreeEncoder(enc);
+	return crtc_id;
+}
+
 /* ---------------------------------------------------------------------------*/
 /**
- * @Brief  Helper function to fill in the modes into the drm_mode_obj struct
+ * @Brief  Helper function to fill in the modes into the drm_connector_obj struct
  *
  * @Param conn The connection from which we will take the modes
  * @Param obj The object that will contain the copied list
@@ -18,7 +37,7 @@
  * @Returns   0 if success, -1 if failed
  */
 /* ---------------------------------------------------------------------------*/
-static int retrieve_drm_modes(drmModeConnector *conn, struct drm_mode_obj *obj)
+static int retrieve_drm_modes(drmModeConnector *conn, struct drm_connector_obj *obj)
 {
 	int i;
 	drmModeModeInfo mode;
@@ -107,11 +126,11 @@ int init_drm_handler()
  * @Returns   The head of a linked list containing the available connectors
  */
 /* ---------------------------------------------------------------------------*/
-struct drm_mode_obj *populate_drm_conn_list(char *device_name)
+struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 {
 	int fd,i;
-	struct drm_mode_obj *head = NULL;
-	struct drm_mode_obj *new,*tmp = NULL;
+	struct drm_connector_obj *head = NULL;
+	struct drm_connector_obj *new,*tmp = NULL;
 	drmModeRes *resource = NULL;
 	drmModeConnector *conn = NULL;
 
@@ -152,7 +171,14 @@ struct drm_mode_obj *populate_drm_conn_list(char *device_name)
 		if (conn->connection == DRM_MODE_CONNECTED) {
 			if (retrieve_drm_modes(conn, new) < 0) {
 				logger_log(LOG_LVL_ERROR,
-					   "Failed to retrieve drm modes\n");
+					   "Failed to retrieve drm modes");
+				if (conn) drmModeFreeConnector(conn);
+				if (new) free(new);
+				continue;
+			}
+			if ((new->crtc_id = retrieve_drm_crtc_id(&fd,conn)) < 0) {
+				logger_log(LOG_LVL_ERROR,
+					   "Failed to retrieve crtc id");
 				if (conn) drmModeFreeConnector(conn);
 				if (new) free(new);
 				continue;

@@ -6,7 +6,7 @@
  * @version 1.0
  * @date 2017-01-16
  * TODO: Change debug define with parameter parsing at boot
- * TODO: cleanup drm_mode_obj list properly
+ * TODO: cleanup drm_connector_obj list properly
 */
 
 #include <stdio.h>
@@ -68,8 +68,8 @@ static int daemonize()
 
 int main(int argc, char **argv)
 {
-	struct drm_mode_obj *iter;
-	struct drm_mode_obj *connectors;
+	struct drm_connector_obj *iter;
+	struct drm_connector_obj *connectors;
 
 #ifndef DEBUG
 	daemonize();

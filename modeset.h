@@ -64,10 +64,10 @@ static const char * const drm_output_names[] = {
  * @Brief  Main drm connector structure
  */
 /* ---------------------------------------------------------------------------*/
-struct drm_mode_obj {
+struct drm_connector_obj {
 	/* Next and prev for Linked list structure */
-	struct drm_mode_obj *next;
-	struct drm_mode_obj *prev;
+	struct drm_connector_obj *next;
+	struct drm_connector_obj *prev;
 
 	/* Connector id*/
 	int connector_id;
@@ -89,7 +89,7 @@ struct drm_mode_obj {
 	drmModeModeInfo *modes;
 	int nr_of_modes;
 	/* If connected, the current mode, if disconnected the last mode*/
-	drmModeModeInfo last_mode;
+	drmModeModeInfo current_mode;
 };
 
 /* ---------------------------------------------------------------------------*/
@@ -112,4 +112,4 @@ int init_drm_handler();
  * @Returns   The head of a linked list containing the available connectors
  */
 /* ---------------------------------------------------------------------------*/
-struct drm_mode_obj *populate_drm_conn_list(char *device_name);
+struct drm_connector_obj *populate_drm_conn_list(char *device_name);
