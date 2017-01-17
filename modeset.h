@@ -4,7 +4,7 @@
  * @author Bram Vlerick
  * @version 1.0
  * @date 2017-01-16
- * TODO: Add way to retrieve current resolution
+ * TODO: Add way to retrieve current resolution: SEE TESTCODE FOR WORKING POC
  * TODO: Add way to set resolution
  */
 
@@ -15,9 +15,49 @@
 #include <unistd.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
+#include <pthread.h>
 #include "debug.h"
 
 #define DEBUG
+
+static pthread_mutex_t _drm_obj_mutex;
+
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Lookup table for DRM connection status
+ */
+/* ---------------------------------------------------------------------------*/
+static const char * const drm_states[] = {
+	"None",
+	"Connected",
+	"Disconnected",
+	"Unkown connection",
+};
+
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Lookup table for DRM output names
+ */
+/* ---------------------------------------------------------------------------*/
+static const char * const drm_output_names[] = {
+	"None",
+	"VGA",
+	"DVI-I",
+	"DVI-D",
+	"DVI-A",
+	"Composite",
+	"SVIDEO",
+	"LVDS",
+	"Component",
+	"DIN",
+	"DP",
+	"HDMI-A",
+	"HDMI-B",
+	"TV",
+	"eDP",
+	"Virtual",
+	"DSI",
+};
 
 /* ---------------------------------------------------------------------------*/
 /**
@@ -28,6 +68,15 @@ struct drm_mode_obj {
 	/* Next and prev for Linked list structure */
 	struct drm_mode_obj *next;
 	struct drm_mode_obj *prev;
+
+	/* Connector id*/
+	int connector_id;
+
+	/* The id of the connected crtc */
+	int crtc_id;
+
+	/* The id of the connected encoder */
+	int encoder_id;
 
 	/* Simple tracking id*/
 	int id;
@@ -43,6 +92,14 @@ struct drm_mode_obj {
 	drmModeModeInfo last_mode;
 };
 
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Initialise the DRM handling lib
+ *
+ * @Returns   0 if successfull, -1 if failed
+ */
+/* ---------------------------------------------------------------------------*/
+int init_drm_handler();
 
 /* ---------------------------------------------------------------------------*/
 /**

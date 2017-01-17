@@ -7,32 +7,6 @@
  */
 
 #include "modeset.h"
-static const char * const drm_states[] = {
-	"None",
-	"Connected",
-	"Disconnected",
-	"Unkown connection",
-};
-
-static const char * const drm_output_names[] = {
-	"None",
-	"VGA",
-	"DVI-I",
-	"DVI-D",
-	"DVI-A",
-	"Composite",
-	"SVIDEO",
-	"LVDS",
-	"Component",
-	"DIN",
-	"DP",
-	"HDMI-A",
-	"HDMI-B",
-	"TV",
-	"eDP",
-	"Virtual",
-	"DSI",
-};
 
 /* ---------------------------------------------------------------------------*/
 /**
@@ -105,6 +79,23 @@ static drmModeRes *retrieve_drm_resources(int *fd)
 	return resource;
 }
 
+
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Initialise the DRM handling lib
+ *
+ * @Returns   0 if successfull, -1 if failed
+ */
+/* ---------------------------------------------------------------------------*/
+int init_drm_handler()
+{
+	if (pthread_mutex_init(&_drm_obj_mutex,NULL) < 0) {
+		logger_log(LOG_LVL_ERROR, "Failed to init mutex\n");
+		return -1;
+	}
+	return 0;
+}
+
 /* ---------------------------------------------------------------------------*/
 /**
  * @Brief  Populate the drm connector list.
@@ -147,6 +138,7 @@ struct drm_mode_obj *populate_drm_conn_list(char *device_name)
 		new = malloc(sizeof(*new));
 		memset(new,0,sizeof(*new));
 		new->id = i;
+		new->connector_id = conn->connector_id;
 
 		/* TODO: make card name dynamic by using device_name */
 		snprintf(new->name,256,"Card0-%s-%d",
@@ -156,8 +148,16 @@ struct drm_mode_obj *populate_drm_conn_list(char *device_name)
 		fprintf(stdout,"Connector: %s is %s\n",new->name,
 			drm_states[conn->connection]);
 #endif
-		retrieve_drm_modes(conn, new);
-
+		/* Retrieve modes for this connector */
+		if (conn->connection == DRM_MODE_CONNECTED) {
+			if (retrieve_drm_modes(conn, new) < 0) {
+				logger_log(LOG_LVL_ERROR,
+					   "Failed to retrieve drm modes\n");
+				if (conn) drmModeFreeConnector(conn);
+				if (new) free(new);
+				continue;
+			}
+		}
 		/* Cleanup drm connector */
 		if (conn) drmModeFreeConnector(conn);
 		/* Set head of list */

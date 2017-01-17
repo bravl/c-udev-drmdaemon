@@ -5,7 +5,9 @@
  * @author Bram Vlerick
  * @version 1.0
  * @date 2017-01-16
- */
+ * TODO: Change debug define with parameter parsing at boot
+ * TODO: cleanup drm_mode_obj list properly
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +16,11 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pthread.h>
 
 #include "debug.h"
 #include "modeset.h"
 
-//TODO: Change debug define with parameter parsing at boot
 /* Uncomment to run without daemon and console logging */
 #define DEBUG
 
@@ -66,19 +68,23 @@ static int daemonize()
 
 int main(int argc, char **argv)
 {
+	struct drm_mode_obj *iter;
+	struct drm_mode_obj *connectors;
+
 #ifndef DEBUG
 	daemonize();
 	logger_set_file_logging("log.txt");
 #endif
 	logger_log(LOG_LVL_INFO, "Running drmdaemon");
 	logger_log(LOG_LVL_INFO, "Creating daemon");
-	struct drm_mode_obj *iter;
-	struct drm_mode_obj *connectors = populate_drm_conn_list("/dev/dri/card1");
+
+	if (init_drm_handler() < 0) return -1;
+
+	connectors = populate_drm_conn_list("/dev/dri/card1");
 	if (!connectors) {
 		logger_log(LOG_LVL_ERROR,"Failed to retrieve connectors");
 		return -1;
 	}
 
-	//TODO: cleanup drm_mode_obj list properly
 	return 0;
 }
