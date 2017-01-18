@@ -18,7 +18,7 @@
 #include <pthread.h>
 #include "debug.h"
 
-#define DEBUG
+//#define DEBUG
 
 static pthread_mutex_t _drm_obj_mutex;
 

@@ -20,6 +20,13 @@
 
 #include "debug.h"
 #include "modeset.h"
+#include "udev_helper.h"
+
+/* Pthread mutex used to protect condition variable */
+pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* Pthead condition used for main to wait for a hotplug */
+pthread_cond_t trigger_drm = PTHREAD_COND_INITIALIZER;
 
 /* Uncomment to run without daemon and console logging */
 #define DEBUG
@@ -66,10 +73,29 @@ static int daemonize()
 	return 0;
 }
 
+void *udev_thread_handler(void *data)
+{
+	struct udev *udev = NULL;
+	struct udev_monitor *mon = NULL;
+	udev = udev_new();
+	if (!udev) {
+		logger_log(LOG_LVL_ERROR,"Failed to create udev instance");
+		return 0;
+	}
+	mon = setup_udev_monitor(udev, "drm");
+	if (!mon) {
+		/* TODO: remove udev struct */
+		return 0;
+	}
+	logger_log(LOG_LVL_OK,"Udev initialisation ok");
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
-	struct drm_connector_obj *iter;
-	struct drm_connector_obj *connectors;
+	int retval = 0;
+	pthread_t udev_thread;
+	struct drm_connector_obj *connectors = NULL;
 
 #ifndef DEBUG
 	daemonize();
@@ -78,13 +104,27 @@ int main(int argc, char **argv)
 	logger_log(LOG_LVL_INFO, "Running drmdaemon");
 	logger_log(LOG_LVL_INFO, "Creating daemon");
 
-	if (init_drm_handler() < 0) return -1;
-
+	if (init_drm_handler() < 0) {
+		retval = -1;
+		goto end;
+	}
+	logger_log(LOG_LVL_INFO,"Populating DRM connector list");
 	connectors = populate_drm_conn_list("/dev/dri/card1");
 	if (!connectors) {
 		logger_log(LOG_LVL_ERROR,"Failed to retrieve connectors");
-		return -1;
+		retval = -1;
+		goto end;
+	}
+	logger_log(LOG_LVL_OK,"List populated");
+
+	/* Create pthread for udev */
+	if (pthread_create(&udev_thread, NULL, udev_thread_handler, NULL) < 0) {
+		logger_log(LOG_LVL_ERROR, "Failed to create pthread");
+		goto end;
 	}
 
-	return 0;
+	/* While wait for condition from udev*/
+	/* Trigger DRM comparision when signal is received from udev */
+	sleep(5);
+end:	return retval;
 }

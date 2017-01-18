@@ -103,7 +103,7 @@ static void print_loglvl(FILE *out,int loglvl) {
 		if (loglvl == LOG_LVL_INFO)
 			fprintf(out,"[%s%s%s] ",KBLU,"info",KNRM);
 		if (loglvl == LOG_LVL_OK)
-			fprintf(out,"[%s%s%s] ",KGRN,"info",KNRM);
+			fprintf(out,"[%s%s%s] ",KGRN,"ok",KNRM);
 	}
 	return;
 }

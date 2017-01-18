@@ -8,6 +8,18 @@
 
 #include "modeset.h"
 
+
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Retrieve the crtc mode that is in use for a given connector
+ *
+ * @Param res Pointer to the DRM resources
+ * @Param fd File descriptor for the device
+ * @Param crtc_id crtc_id of a connector
+ *
+ * @Returns   empty mode if not connected or found, current mode if found
+ */
+/* ---------------------------------------------------------------------------*/
 static drmModeModeInfo retrieve_current_crtc_mode(drmModeRes *res, int fd,
 						  uint32_t crtc_id)
 {
@@ -17,7 +29,9 @@ static drmModeModeInfo retrieve_current_crtc_mode(drmModeRes *res, int fd,
 	for (i = 0; i < res->count_crtcs; i++) {
 		drmModeCrtc *crtc = drmModeGetCrtc(fd, res->crtcs[i]);
 		if (crtc->crtc_id == crtc_id) {
+#ifdef DEBUG
 			printf("Found match\n");
+#endif
 			mode = crtc->mode;
 			drmModeFreeCrtc(crtc);
 			return mode;
@@ -41,8 +55,12 @@ static int retrieve_drm_crtc_id(int *fd, drmModeConnector *conn)
 {
 	int crtc_id = 0;
 	drmModeEncoder *enc;
+	if (!fd || !conn) {
+		logger_log(LOG_LVL_ERROR, "Params cannot be NULL");
+		return -1;
+	}
 	if (conn->count_encoders == 0 || conn->encoder_id == 0) {
-		logger_log(LOG_LVL_ERROR,"No encoders or invalid encoder id");
+		logger_log(LOG_LVL_WARNING,"No encoders or invalid encoder id");
 		logger_log(LOG_LVL_INFO, "Probably no display connected");
 		return -1;
 	}
@@ -212,7 +230,8 @@ struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 			new->crtc_id = retval;
 			new->current_mode =
 				retrieve_current_crtc_mode(resource,fd,new->crtc_id);
-			printf("Current mode: %s\n",new->current_mode.name);
+			logger_log(LOG_LVL_INFO,"Current mode for %s: %s",
+				   new->name,new->current_mode.name);
 		}
 		/* Cleanup drm connector */
 		if (conn) drmModeFreeConnector(conn);
