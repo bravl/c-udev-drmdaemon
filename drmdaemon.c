@@ -7,7 +7,9 @@
  * @date 2017-01-16
  * TODO: Change debug define with parameter parsing at boot
  * TODO: cleanup drm_connector_obj list properly
-*/
+ * Note: Select in reading udev statement due to libudev bug
+ * http://stackoverflow.com/questions/15687784/libudev-monitoring-returns-null-pointer-on-raspbian
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,14 +91,22 @@ void *udev_thread_handler(void *data)
 	}
 	logger_log(LOG_LVL_OK,"Udev initialisation ok");
 
-	int fd = udev_monitor_get_fd(monitor);
+	int fd = udev_monitor_get_fd(mon);
 	while (1) {
-		struct udev_device *dev = udev_monitor_receive_device(monitor);
-		if (dev == NULL) {
-			logger_log(LOG_LVL_ERROR,"Failed to retrieve device\n");
-			continue;
+		fd_set fds;
+		FD_ZERO(&fds);
+		FD_SET(fd,&fds);
+		int ret = select(fd+1,&fds,NULL,NULL,NULL);
+		if (ret > 0 && FD_ISSET(fd,&fds)) {
+			struct udev_device *dev =
+				udev_monitor_receive_device(mon);
+			if (dev == NULL) {
+				logger_log(LOG_LVL_ERROR,"Failed to retrieve device\n");
+				continue;
+			}
+			printf("Got something\n");
+			udev_device_unref(dev);
 		}
-		printf("Got something\n");
 	}
 	return 0;
 }
