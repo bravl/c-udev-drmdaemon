@@ -88,6 +88,16 @@ void *udev_thread_handler(void *data)
 		return 0;
 	}
 	logger_log(LOG_LVL_OK,"Udev initialisation ok");
+
+	int fd = udev_monitor_get_fd(monitor);
+	while (1) {
+		struct udev_device *dev = udev_monitor_receive_device(monitor);
+		if (dev == NULL) {
+			logger_log(LOG_LVL_ERROR,"Failed to retrieve device\n");
+			continue;
+		}
+		printf("Got something\n");
+	}
 	return 0;
 }
 
