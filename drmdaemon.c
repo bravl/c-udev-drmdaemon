@@ -104,7 +104,10 @@ void *udev_thread_handler(void *data)
 				logger_log(LOG_LVL_ERROR,"Failed to retrieve device\n");
 				continue;
 			}
-			printf("Got something\n");
+			/*TODO: Check stuff here */
+			pthread_mutex_lock(&cond_mutex);
+			pthread_cond_signal(&trigger_drm);
+			pthread_mutex_unlock(&cond_mutex);
 			udev_device_unref(dev);
 		}
 	}
@@ -149,7 +152,19 @@ int main(int argc, char **argv)
 	/* While wait for condition from udev*/
 	/* Trigger DRM comparision when signal is received from udev */
 	while(1) {
-		
+		pthread_mutex_lock(&cond_mutex);
+		pthread_cond_wait(&trigger_drm,&cond_mutex);
+		pthread_mutex_unlock(&cond_mutex);
+		logger_log(LOG_LVL_INFO, "Received a signal from udev");
+		retval = update_drm_conn_list(connectors,"/dev/dri/card0");
+		if (retval < 0) {
+			logger_log(LOG_LVL_ERROR, "Failed to update list");
+			continue;
+		} else if (retval == 0) {
+			logger_log(LOG_LVL_INFO, "No DRM update");
+		} else {
+			logger_log(LOG_LVL_INFO, "DRM Changes detected");
+		}
 	}
 end:	return retval;
 }

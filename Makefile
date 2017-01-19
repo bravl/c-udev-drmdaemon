@@ -15,4 +15,6 @@ $(EXEC): $(OBJECTS)
 cleanup:
 	rm -f $(OBJECTS)
 clean:
-	rm -f $(EXEC) $(OBJECTS)
+	rm -f $(EXEC) $(OBJECTS) TODO
+todo:
+	grep -ihr --exclude="*.swp" --exclude="Makefile" --exclude="TODO.txt" TODO: | tr -d '/','*' | sed -e 's/^[ \t]*//' > TODO

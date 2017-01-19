@@ -113,3 +113,16 @@ int init_drm_handler();
  */
 /* ---------------------------------------------------------------------------*/
 struct drm_connector_obj *populate_drm_conn_list(char *device_name);
+
+
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Update the current drm list with new values if something has changed
+ *
+ * @Param drm_connector_obj The head of the drm_connector_obj list
+ * @Param device_name The device name of the card
+ *
+ * @Returns   number of changes
+ */
+/* ---------------------------------------------------------------------------*/
+int update_drm_conn_list(struct drm_connector_obj *head, char *device_name);

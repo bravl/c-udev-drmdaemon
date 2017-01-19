@@ -1,6 +1,6 @@
 /**
  * @file modeset.c
- * @Brief  Fuctions for retrieving and setting modes through DRM
+ * @Brief  Functions for retrieving and setting modes through DRM
  * @author Bram Vlerick
  * @version 1.0
  * @date 2017-01-17
@@ -229,6 +229,8 @@ struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 				continue;
 			}
 			new->crtc_id = retval;
+			/* TODO: Add workaround for mode.name not filled in by amd */
+			/* TODO: Fix the mode.name in the AMD kernel driver */
 			new->current_mode =
 				retrieve_current_crtc_mode(resource,fd,new->crtc_id);
 			logger_log(LOG_LVL_INFO,"Current mode for %s: %s",
@@ -251,4 +253,40 @@ struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 end:	if (resource) drmModeFreeResources(resource);
 	if (fd) close(fd);
 	return head;
+}
+
+/* ---------------------------------------------------------------------------*/
+/**
+ * @Brief  Update the current drm list with new values if something has changed
+ *
+ * @Param drm_connector_obj The head of the drm_connector_obj list
+ * @Param device_name The device name of the card
+ *
+ * @Returns   number of changes
+ */
+/* ---------------------------------------------------------------------------*/
+int update_drm_conn_list(struct drm_connector_obj *head, char *device_name)
+{
+	int fd, i, retval = 0;
+	drmModeRes *resource = NULL;
+	drmModeConnector *conn = NULL;
+
+	fd = open(device_name, O_RDWR | O_CLOEXEC);
+	if (!fd) {
+		logger_log(LOG_LVL_ERROR,"Failed to open device");
+		retval = -1;
+		goto end;
+	}
+
+	resource = retrieve_drm_resources(&fd);
+	if (!resource) {
+		retval = -1;
+		goto end;
+	}
+
+	logger_log(LOG_LVL_INFO, "Updating DRM connector list");
+
+end:	if (conn) drmModeFreeConnector(conn);
+	if (resource) drmModeFreeResources(resource);
+	return retval;
 }
