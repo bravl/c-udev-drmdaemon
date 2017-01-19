@@ -118,7 +118,10 @@ int main(int argc, char **argv)
 	struct drm_connector_obj *connectors = NULL;
 
 #ifndef DEBUG
-	daemonize();
+	if (daemonize() < 0) {
+		logger_log(LOG_LVL_ERROR,"Failed to daemonize");
+		return -1;
+	}
 	logger_set_file_logging("log.txt");
 #endif
 	logger_log(LOG_LVL_INFO, "Running drmdaemon");
@@ -129,7 +132,7 @@ int main(int argc, char **argv)
 		goto end;
 	}
 	logger_log(LOG_LVL_INFO,"Populating DRM connector list");
-	connectors = populate_drm_conn_list("/dev/dri/card1");
+	connectors = populate_drm_conn_list("/dev/dri/card0");
 	if (!connectors) {
 		logger_log(LOG_LVL_ERROR,"Failed to retrieve connectors");
 		retval = -1;
@@ -145,6 +148,8 @@ int main(int argc, char **argv)
 
 	/* While wait for condition from udev*/
 	/* Trigger DRM comparision when signal is received from udev */
-	sleep(5);
+	while(1) {
+		
+	}
 end:	return retval;
 }

@@ -30,7 +30,8 @@ static drmModeModeInfo retrieve_current_crtc_mode(drmModeRes *res, int fd,
 		drmModeCrtc *crtc = drmModeGetCrtc(fd, res->crtcs[i]);
 		if (crtc->crtc_id == crtc_id) {
 #ifdef DEBUG
-			printf("Found match\n");
+			printf("Found match %dx%d\n",
+			       crtc->mode.hdisplay, crtc->mode.vdisplay);
 #endif
 			mode = crtc->mode;
 			drmModeFreeCrtc(crtc);
