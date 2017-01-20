@@ -8,7 +8,6 @@
 
 #include "modeset.h"
 
-
 /* ---------------------------------------------------------------------------*/
 /**
  * @Brief  Retrieve the crtc mode that is in use for a given connector
@@ -40,7 +39,6 @@ static drmModeModeInfo retrieve_current_crtc_mode(drmModeRes *res, int fd,
 	}
 	return mode;
 }
-
 
 /* ---------------------------------------------------------------------------*/
 /**
@@ -147,6 +145,62 @@ static drmModeRes *retrieve_drm_resources(int *fd)
 	return resource;
 }
 
+static int update_connector(int fd, drmModeConnector *conn,
+			    drmModeRes *res, struct drm_connector_obj* obj)
+{
+	uint32_t tmpval = 0;
+	drmModeModeInfo tmpMode;
+	int updated = 0;
+
+	logger_log(LOG_LVL_INFO, "Updating %s",obj->name);
+	if (obj->status != conn->connection) {
+		logger_log(LOG_LVL_INFO, "Updating status: %s",
+			   drm_states[conn->connection]);
+		obj->status = conn->connection;
+		updated = 1;
+	}
+
+	if (obj->status == DRM_MODE_CONNECTED) {
+		if (obj->encoder_id != conn->encoder_id) {
+			obj->connector_id = conn->encoder_id;
+			logger_log(LOG_LVL_INFO, "Updating encoder id %d",
+				   obj->connector_id);
+			updated = 1;
+		}
+		tmpval = retrieve_drm_crtc_id(&fd, conn);
+		if (obj->crtc_id != tmpval) {
+			logger_log(LOG_LVL_INFO, "Updating crtc id %d",tmpval);
+			obj->crtc_id = tmpval;
+			updated = 1;
+		}
+		tmpMode = retrieve_current_crtc_mode(res,fd,obj->crtc_id);
+		if (strcmp(tmpMode.name, obj->current_mode.name)) {
+			logger_log(LOG_LVL_INFO, "Updating current mode");
+			obj->current_mode = tmpMode;
+			updated = 1;
+		}
+	}
+	return updated;
+}
+
+static int compare_and_update_connector(int fd, drmModeConnector *conn,
+					drmModeRes *res,
+					struct drm_connector_obj *head)
+{
+	int updated = 0, update_count = 0;
+	struct drm_connector_obj *iter;
+	for (iter = head; iter != NULL; iter = iter->next) {
+		if (iter->connector_id == conn->connector_id) {
+			logger_log(LOG_LVL_INFO,"Found connector");
+			updated = update_connector(fd, conn, res, iter);
+			if (updated) {
+				logger_log(LOG_LVL_INFO, "Connector updated");
+				update_count++;
+			}
+		}
+	}
+	return update_count;
+}
 
 /* ---------------------------------------------------------------------------*/
 /**
@@ -285,8 +339,12 @@ int update_drm_conn_list(struct drm_connector_obj *head, char *device_name)
 	}
 
 	logger_log(LOG_LVL_INFO, "Updating DRM connector list");
+	for (i = 0; i < resource->count_connectors; i++) {
+		conn = drmModeGetConnector(fd,resource->connectors[i]);
+		retval = compare_and_update_connector(fd, conn, resource,head);
+		drmModeFreeConnector(conn);
+	}
 
-end:	if (conn) drmModeFreeConnector(conn);
-	if (resource) drmModeFreeResources(resource);
+end:	if (resource) drmModeFreeResources(resource);
 	return retval;
 }

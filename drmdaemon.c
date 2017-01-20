@@ -156,6 +156,7 @@ int main(int argc, char **argv)
 		pthread_cond_wait(&trigger_drm,&cond_mutex);
 		pthread_mutex_unlock(&cond_mutex);
 		logger_log(LOG_LVL_INFO, "Received a signal from udev");
+		sleep(3);
 		retval = update_drm_conn_list(connectors,"/dev/dri/card0");
 		if (retval < 0) {
 			logger_log(LOG_LVL_ERROR, "Failed to update list");
