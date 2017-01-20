@@ -1,7 +1,7 @@
 CC = gcc
 CC_FLAGS = -w -I/usr/include/libdrm/
 LD_FLAGS = -ldrm -ludev -lpthread
-PASSWD = "enterpasswd"
+PASSWD ?= $(shell bash -c 'read -s -p "Password: " pwd; echo $$pwd')
 EXEC = drmdaemon
 IP = "10.200.18.205"
 SOURCES = $(wildcard *.c)
