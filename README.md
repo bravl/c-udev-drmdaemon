@@ -1,2 +1,2 @@
 # drmdaemon
-Small daemon to dynamically control resolutions
+Daemon that gets notified by UDev that there is a change in the DRM subsystem. Once a change is detected DRM will update the display settings. By using DBUS we also provide a way for applications to talk to this daemon.
