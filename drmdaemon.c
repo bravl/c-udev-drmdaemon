@@ -7,6 +7,7 @@
  * @date 2017-01-16
  * TODO: Change debug define with parameter parsing at boot
  * TODO: cleanup drm_connector_obj list properly
+ * TODO: Add queueing mechanism for udev events
  * Note: Select in reading udev statement due to libudev bug
  * http://stackoverflow.com/questions/15687784/libudev-monitoring-returns-null-pointer-on-raspbian
  */
@@ -135,7 +136,7 @@ int main(int argc, char **argv)
 		goto end;
 	}
 	logger_log(LOG_LVL_INFO,"Populating DRM connector list");
-	connectors = populate_drm_conn_list("/dev/dri/card0");
+	connectors = populate_drm_conn_list("/dev/dri/card1");
 	if (!connectors) {
 		logger_log(LOG_LVL_ERROR,"Failed to retrieve connectors");
 		retval = -1;

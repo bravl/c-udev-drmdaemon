@@ -1,11 +1,13 @@
+TODO: Optimize list operations
 TODO: Change debug define with parameter parsing at boot
 TODO: cleanup drm_connector_obj list properly
+TODO: Add queueing mechanism for udev events
 TODO: remove udev struct 
 TODO: Check stuff here 
-TODO: Add way to retrieve current resolution: SEE TESTCODE FOR WORKING POC
-TODO: Add way to set resolution
 TODO: Finish Log to file
 TODO: Add defines for easy logging
+TODO: Add way to retrieve current resolution: SEE TESTCODE FOR WORKING POC
+TODO: Add way to set resolution
 TODO: make card name dynamic by using device_name 
 TODO: Add workaround for mode.name not filled in by amd 
 TODO: Fix the mode.name in the AMD kernel driver 
