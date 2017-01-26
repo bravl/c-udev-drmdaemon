@@ -12,9 +12,9 @@
 
 #include "list.h"
 
-struct dlist_t *list_init(void (*destroy)(void *data)) {
+struct dlist *list_init(void (*destroy)(void *data)) {
     /* Initialise struct*/
-    struct dlist_t *list = malloc(sizeof(struct dlist_t));
+    struct dlist *list = malloc(sizeof(struct dlist));
     if (!list) {
         return NULL;
     }
@@ -25,7 +25,7 @@ struct dlist_t *list_init(void (*destroy)(void *data)) {
     return list;
 }
 
-void list_destroy(dlist_t *list) {
+void list_destroy(struct dlist *list) {
     void *data;
     if (!list) {
         return;
@@ -41,13 +41,13 @@ void list_destroy(dlist_t *list) {
         }
     }
     /* clear list*/
-    memset(list, 0, sizeof(dlist_t));
+    memset(list, 0, sizeof(struct dlist));
     free(list);
     list = NULL;
     return;
 }
 
-int list_insert_next(struct dlist_t *list, struct dlist_element *element, const void *data) {
+int list_insert_next(struct dlist *list, struct dlist_element *element, const void *data) {
     if (!list) {
         return -1;
     }
@@ -85,7 +85,7 @@ int list_insert_next(struct dlist_t *list, struct dlist_element *element, const 
     return 0;
 }
 
-int list_insert_prev(struct dlist_t *list, struct dlist_element *element, const void *data) {
+int list_insert_prev(struct dlist *list, struct dlist_element *element, const void *data) {
     if (!list) {
         return -1;
     }
@@ -125,7 +125,7 @@ int list_insert_prev(struct dlist_t *list, struct dlist_element *element, const 
     return 0;
 }
 
-int list_remove_item(struct dlist_t *list, struct dlist_element *element, void **data) {
+int list_remove_item(struct dlist *list, struct dlist_element *element, void **data) {
     if (!list) {
         return -1;
     }

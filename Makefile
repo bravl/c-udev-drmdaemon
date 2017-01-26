@@ -22,3 +22,4 @@ todo:
 	grep -ihr --exclude="*.swp" --exclude="Makefile" --exclude="TODO.txt" TODO: | tr -d '/','*' | sed -e 's/^[ \t]*//' > TODO
 install:
 	sshpass -p '$(PASSWD)' scp drmdaemon root@$(IP):/store/
+	sshpass -p '$(PASSWD)' ssh root@$(IP)

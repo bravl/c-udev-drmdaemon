@@ -22,6 +22,7 @@
 #include <pthread.h>
 
 #include "debug.h"
+#include "queue.h"
 #include "modeset.h"
 #include "udev_helper.h"
 
@@ -80,6 +81,7 @@ void *udev_thread_handler(void *data)
 {
 	struct udev *udev = NULL;
 	struct udev_monitor *mon = NULL;
+	struct queue *udev_queue = (struct queue*)data;
 	udev = udev_new();
 	if (!udev) {
 		logger_log(LOG_LVL_ERROR,"Failed to create udev instance");
@@ -105,11 +107,11 @@ void *udev_thread_handler(void *data)
 				logger_log(LOG_LVL_ERROR,"Failed to retrieve device\n");
 				continue;
 			}
-			/*TODO: Check stuff here */
+			
+			/* Push data to the udev queue that is handled by main thread*/
 			pthread_mutex_lock(&cond_mutex);
-			pthread_cond_signal(&trigger_drm);
+				queue_push(udev_queue,(void*)dev);
 			pthread_mutex_unlock(&cond_mutex);
-			udev_device_unref(dev);
 		}
 	}
 	return 0;
@@ -119,7 +121,11 @@ int main(int argc, char **argv)
 {
 	int retval = 0;
 	pthread_t udev_thread;
+	struct queue *udev_queue;
 	struct drm_connector_obj *connectors = NULL;
+
+	/*TODO: Add cleanup function!! */
+	udev_queue = queue_init(NULL);
 
 #ifndef DEBUG
 	if (daemonize() < 0) {
@@ -136,7 +142,7 @@ int main(int argc, char **argv)
 		goto end;
 	}
 	logger_log(LOG_LVL_INFO,"Populating DRM connector list");
-	connectors = populate_drm_conn_list("/dev/dri/card1");
+	connectors = populate_drm_conn_list("/dev/dri/card0");
 	if (!connectors) {
 		logger_log(LOG_LVL_ERROR,"Failed to retrieve connectors");
 		retval = -1;
@@ -145,7 +151,7 @@ int main(int argc, char **argv)
 	logger_log(LOG_LVL_OK,"List populated");
 
 	/* Create pthread for udev */
-	if (pthread_create(&udev_thread, NULL, udev_thread_handler, NULL) < 0) {
+	if (pthread_create(&udev_thread, NULL, udev_thread_handler, (void*)udev_queue) < 0) {
 		logger_log(LOG_LVL_ERROR, "Failed to create pthread");
 		goto end;
 	}
@@ -153,20 +159,15 @@ int main(int argc, char **argv)
 	/* While wait for condition from udev*/
 	/* Trigger DRM comparision when signal is received from udev */
 	while(1) {
+
 		pthread_mutex_lock(&cond_mutex);
-		pthread_cond_wait(&trigger_drm,&cond_mutex);
+			if (QUEUE_SIZE(udev_queue) != 0) {
+				logger_log(LOG_LVL_INFO,"new items added");
+				void *data;
+				queue_pop(udev_queue,&data);
+				udev_device_unref((struct udev_device*)data);
+			}
 		pthread_mutex_unlock(&cond_mutex);
-		logger_log(LOG_LVL_INFO, "Received a signal from udev");
-		sleep(3);
-		retval = update_drm_conn_list(connectors,"/dev/dri/card0");
-		if (retval < 0) {
-			logger_log(LOG_LVL_ERROR, "Failed to update list");
-			continue;
-		} else if (retval == 0) {
-			logger_log(LOG_LVL_INFO, "No DRM update");
-		} else {
-			logger_log(LOG_LVL_INFO, "DRM Changes detected");
-		}
 	}
 end:	return retval;
 }

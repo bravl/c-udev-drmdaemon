@@ -83,7 +83,7 @@ struct dlist{
  *  @param destroy function pointer to the function that is used to remove the
  * data
  */
-struct dlist_t *list_init(void (*destroy)(void *data));
+struct dlist *list_init(void (*destroy)(void *data));
 
 /** @brief This function will destroy the list
  *
@@ -93,7 +93,7 @@ struct dlist_t *list_init(void (*destroy)(void *data));
  *
  *  @param list the list that has to be removed
  */
-void list_destroy(dlist_t *list);
+void list_destroy(struct dlist *list);
 
 /** @brief Insert an element after another element
  *
@@ -107,7 +107,7 @@ void list_destroy(dlist_t *list);
  *  @param data the data that will be stored by the new element
  *  @return function return 0 if successful
  */
-int list_insert_next(struct dlist_t *list, struct dlist_element *element, const void *data);
+int list_insert_next(struct dlist *list, struct dlist_element *element, const void *data);
 
 /** @brief Insert an element after before element
  *
@@ -121,7 +121,7 @@ int list_insert_next(struct dlist_t *list, struct dlist_element *element, const 
  *  @param data the data that will be stored by the new element
  *  @return function will return 0 if successful
  */
-int list_insert_prev(struct dlist_t *list, struct dlist_element *element, const void *data);
+int list_insert_prev(struct dlist *list, struct dlist_element *element, const void *data);
 
 /** @brief Remove an element from the list
  *
@@ -134,6 +134,6 @@ int list_insert_prev(struct dlist_t *list, struct dlist_element *element, const 
  *  @return the function returns 0 if successful
  *  @warning programmer is resposible for removing data after element is removed
  */
-int list_remove_item(struct dlist_t *list, struct dlist_element *element, void **data);
+int list_remove_item(struct dlist *list, struct dlist_element *element, void **data);
 
 #endif
