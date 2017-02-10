@@ -24,13 +24,14 @@ static drmModeModeInfo retrieve_current_crtc_mode(drmModeRes *res, int fd,
 {
 	int i;
 	drmModeModeInfo mode;
-	memset(&mode,0,sizeof(mode));
+	memset(&mode, 0, sizeof(mode));
 	for (i = 0; i < res->count_crtcs; i++) {
 		drmModeCrtc *crtc = drmModeGetCrtc(fd, res->crtcs[i]);
 		if (crtc->crtc_id == crtc_id) {
 #ifdef DEBUG
 			printf("Found match %dx%d\n",
-			       crtc->mode.hdisplay, crtc->mode.vdisplay);
+			       crtc->mode.hdisplay,
+			       crtc->mode.vdisplay);
 #endif
 			mode = crtc->mode;
 			drmModeFreeCrtc(crtc);
@@ -59,13 +60,14 @@ static int retrieve_drm_crtc_id(int *fd, drmModeConnector *conn)
 		return -1;
 	}
 	if (conn->count_encoders == 0 || conn->encoder_id == 0) {
-		logger_log(LOG_LVL_WARNING,"No encoders or invalid encoder id");
+		logger_log(LOG_LVL_WARNING,
+			   "No encoders or invalid encoder id");
 		logger_log(LOG_LVL_INFO, "Probably no display connected");
 		return -1;
 	}
 	enc = drmModeGetEncoder(*fd, conn->encoders[0]);
 	if (!enc) {
-		logger_log(LOG_LVL_ERROR,"Failed to retrieve encoder");
+		logger_log(LOG_LVL_ERROR, "Failed to retrieve encoder");
 		return -1;
 	}
 	crtc_id = enc->crtc_id;
@@ -75,7 +77,8 @@ static int retrieve_drm_crtc_id(int *fd, drmModeConnector *conn)
 
 /* ---------------------------------------------------------------------------*/
 /**
- * @Brief  Helper function to fill in the modes into the drm_connector_obj struct
+ * @Brief  Helper function to fill in the modes into the drm_connector_obj
+ * struct
  *
  * @Param conn The connection from which we will take the modes
  * @Param obj The object that will contain the copied list
@@ -96,21 +99,21 @@ static int retrieve_drm_modes(drmModeConnector *conn,
 		return -1;
 	}
 	if (conn->count_modes == 0) {
-		logger_log(LOG_LVL_WARNING,
-			   "No modes available for connector");
+		logger_log(LOG_LVL_WARNING, "No modes available for connector");
 		return 0;
 	}
 
-	memset(obj->modes,0,(conn->count_modes * sizeof(drmModeModeInfo)));
-	memcpy(obj->modes,conn->modes,
+	memset(obj->modes, 0, (conn->count_modes * sizeof(drmModeModeInfo)));
+	memcpy(obj->modes,
+	       conn->modes,
 	       (conn->count_modes * sizeof(drmModeModeInfo)));
 	obj->nr_of_modes = conn->count_modes;
 
 #ifdef DEBUG
 	for (i = 0; i < conn->count_modes; i++) {
 		mode = obj->modes[i];
-		printf("%s\n",mode.name);
-		//printf("%dx%d - %dhz\n",mode.hdisplay, mode.vdisplay,
+		printf("%s\n", mode.name);
+		// printf("%dx%d - %dhz\n",mode.hdisplay, mode.vdisplay,
 		//       mode.vrefresh);
 	}
 #endif
@@ -145,16 +148,17 @@ static drmModeRes *retrieve_drm_resources(int *fd)
 	return resource;
 }
 
-static int update_connector(int fd, drmModeConnector *conn,
-			    drmModeRes *res, struct drm_connector_obj* obj)
+static int update_connector(int fd, drmModeConnector *conn, drmModeRes *res,
+			    struct drm_connector_obj *obj)
 {
 	uint32_t tmpval = 0;
 	drmModeModeInfo tmpMode;
 	int updated = 0;
 
-	logger_log(LOG_LVL_INFO, "Updating %s",obj->name);
+	logger_log(LOG_LVL_INFO, "Updating %s", obj->name);
 	if (obj->status != conn->connection) {
-		logger_log(LOG_LVL_INFO, "Updating status: %s",
+		logger_log(LOG_LVL_INFO,
+			   "Updating status: %s",
 			   drm_states[conn->connection]);
 		obj->status = conn->connection;
 		updated = 1;
@@ -163,17 +167,18 @@ static int update_connector(int fd, drmModeConnector *conn,
 	if (obj->status == DRM_MODE_CONNECTED) {
 		if (obj->encoder_id != conn->encoder_id) {
 			obj->connector_id = conn->encoder_id;
-			logger_log(LOG_LVL_INFO, "Updating encoder id %d",
+			logger_log(LOG_LVL_INFO,
+				   "Updating encoder id %d",
 				   obj->connector_id);
 			updated = 1;
 		}
 		tmpval = retrieve_drm_crtc_id(&fd, conn);
 		if (obj->crtc_id != tmpval) {
-			logger_log(LOG_LVL_INFO, "Updating crtc id %d",tmpval);
+			logger_log(LOG_LVL_INFO, "Updating crtc id %d", tmpval);
 			obj->crtc_id = tmpval;
 			updated = 1;
 		}
-		tmpMode = retrieve_current_crtc_mode(res,fd,obj->crtc_id);
+		tmpMode = retrieve_current_crtc_mode(res, fd, obj->crtc_id);
 		if (strcmp(tmpMode.name, obj->current_mode.name)) {
 			logger_log(LOG_LVL_INFO, "Updating current mode");
 			obj->current_mode = tmpMode;
@@ -191,7 +196,7 @@ static int compare_and_update_connector(int fd, drmModeConnector *conn,
 	struct drm_connector_obj *iter;
 	for (iter = head; iter != NULL; iter = iter->next) {
 		if (iter->connector_id == conn->connector_id) {
-			logger_log(LOG_LVL_INFO,"Found connector");
+			logger_log(LOG_LVL_INFO, "Found connector");
 			updated = update_connector(fd, conn, res, iter);
 			if (updated) {
 				logger_log(LOG_LVL_INFO, "Connector updated");
@@ -211,7 +216,7 @@ static int compare_and_update_connector(int fd, drmModeConnector *conn,
 /* ---------------------------------------------------------------------------*/
 int init_drm_handler()
 {
-	if (pthread_mutex_init(&_drm_obj_mutex,NULL) < 0) {
+	if (pthread_mutex_init(&_drm_obj_mutex, NULL) < 0) {
 		logger_log(LOG_LVL_ERROR, "Failed to init mutex\n");
 		return -1;
 	}
@@ -231,9 +236,9 @@ int init_drm_handler()
 /* ---------------------------------------------------------------------------*/
 struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 {
-	int fd,i,retval;
+	int fd, i, retval;
 	struct drm_connector_obj *head = NULL;
-	struct drm_connector_obj *new,*tmp = NULL;
+	struct drm_connector_obj *new, *tmp = NULL;
 	drmModeRes *resource = NULL;
 	drmModeConnector *conn = NULL;
 
@@ -258,16 +263,20 @@ struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 		}
 
 		new = malloc(sizeof(*new));
-		memset(new,0,sizeof(*new));
+		memset(new, 0, sizeof(*new));
 		new->id = i;
 		new->connector_id = conn->connector_id;
 
 		/* TODO: make card name dynamic by using device_name */
-		snprintf(new->name,256,"Card0-%s-%d",
+		snprintf(new->name,
+			 256,
+			 "Card0-%s-%d",
 			 drm_output_names[conn->connector_type],
 			 conn->connector_type_id);
 #ifdef DEBUG
-		fprintf(stdout,"Connector: %s is %s\n",new->name,
+		fprintf(stdout,
+			"Connector: %s is %s\n",
+			new->name,
 			drm_states[conn->connection]);
 #endif
 		/* Retrieve modes for this connector */
@@ -277,34 +286,36 @@ struct drm_connector_obj *populate_drm_conn_list(char *device_name)
 				if (new) free(new);
 				continue;
 			}
-			if ((retval = retrieve_drm_crtc_id(&fd,conn)) < 0) {
+			if ((retval = retrieve_drm_crtc_id(&fd, conn)) < 0) {
 				if (conn) drmModeFreeConnector(conn);
 				if (new) free(new);
 				continue;
 			}
 			new->crtc_id = retval;
-			/* TODO: Add workaround for mode.name not filled in by amd */
+			/* TODO: Add workaround for mode.name not filled in by
+			 * amd */
 			/* TODO: Fix the mode.name in the AMD kernel driver */
-			new->current_mode =
-				retrieve_current_crtc_mode(resource,fd,new->crtc_id);
-			logger_log(LOG_LVL_INFO,"Current mode for %s: %s",
-				   new->name,new->current_mode.name);
+			new->current_mode = retrieve_current_crtc_mode(
+			    resource, fd, new->crtc_id);
+			logger_log(LOG_LVL_INFO,
+				   "Current mode for %s: %s",
+				   new->name,
+				   new->current_mode.name);
 		}
 		/* Cleanup drm connector */
 		if (conn) drmModeFreeConnector(conn);
 		/* Set head of list */
-		if (head == NULL)
-			head = new;
+		if (head == NULL) head = new;
 		/* If tmp is set, link next ptr to current item */
-		if (tmp)
-			tmp->next = new;
+		if (tmp) tmp->next = new;
 		/* Set prev ptr of new to last saved item */
 		new->prev = tmp;
 		/* Update tmp */
 		tmp = new;
 	}
 
-end:	if (resource) drmModeFreeResources(resource);
+end:
+	if (resource) drmModeFreeResources(resource);
 	if (fd) close(fd);
 	return head;
 }
@@ -327,7 +338,7 @@ int update_drm_conn_list(struct drm_connector_obj *head, char *device_name)
 
 	fd = open(device_name, O_RDWR | O_CLOEXEC);
 	if (!fd) {
-		logger_log(LOG_LVL_ERROR,"Failed to open device");
+		logger_log(LOG_LVL_ERROR, "Failed to open device");
 		retval = -1;
 		goto end;
 	}
@@ -340,11 +351,12 @@ int update_drm_conn_list(struct drm_connector_obj *head, char *device_name)
 
 	logger_log(LOG_LVL_INFO, "Updating DRM connector list");
 	for (i = 0; i < resource->count_connectors; i++) {
-		conn = drmModeGetConnector(fd,resource->connectors[i]);
-		retval = compare_and_update_connector(fd, conn, resource,head);
+		conn = drmModeGetConnector(fd, resource->connectors[i]);
+		retval = compare_and_update_connector(fd, conn, resource, head);
 		drmModeFreeConnector(conn);
 	}
 
-end:	if (resource) drmModeFreeResources(resource);
+end:
+	if (resource) drmModeFreeResources(resource);
 	return retval;
 }

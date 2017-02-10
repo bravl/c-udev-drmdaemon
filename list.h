@@ -15,44 +15,44 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 
 /** @brief defintion of the list element structure
  *
  *  This structure contains the data for a list element
  */
 struct dlist_element {
-    /**< void pointer to element data */
-    void *data;
-    /**< pointer to previous element in the list */
-    struct dlist_element *prev;
-    /**< pointer to next element in the list */
-    struct dlist_element *next;
+	/**< void pointer to element data */
+	void *data;
+	/**< pointer to previous element in the list */
+	struct dlist_element *prev;
+	/**< pointer to next element in the list */
+	struct dlist_element *next;
 };
 
 /** @brief definition of the list structure
  *
  *  This structure contains the data for a list.
  */
-struct dlist{
-    /**< total amount elements in the list*/
-    int size;
+struct dlist {
+	/**< total amount elements in the list*/
+	int size;
 
-    /**< function pointer to the match functions*/
-    int (*match)(const void *key1, const void *key2);
+	/**< function pointer to the match functions*/
+	int (*match)(const void *key1, const void *key2);
 
-    /**< function pointer to the destroy function */
-    void (*destroy)(void *data);
+	/**< function pointer to the destroy function */
+	void (*destroy)(void *data);
 
-    /**< the first element of the list*/
-    struct dlist_element *head;
+	/**< the first element of the list*/
+	struct dlist_element *head;
 
-    /**< the last element of the list*/
-    struct dlist_element *tail;
-    pthread_mutex_t list_mutex;
+	/**< the last element of the list*/
+	struct dlist_element *tail;
+	pthread_mutex_t list_mutex;
 };
 
 /**@brief Macro to get the tail of a list
@@ -107,7 +107,8 @@ void list_destroy(struct dlist *list);
  *  @param data the data that will be stored by the new element
  *  @return function return 0 if successful
  */
-int list_insert_next(struct dlist *list, struct dlist_element *element, const void *data);
+int list_insert_next(struct dlist *list, struct dlist_element *element,
+		     const void *data);
 
 /** @brief Insert an element after before element
  *
@@ -121,7 +122,8 @@ int list_insert_next(struct dlist *list, struct dlist_element *element, const vo
  *  @param data the data that will be stored by the new element
  *  @return function will return 0 if successful
  */
-int list_insert_prev(struct dlist *list, struct dlist_element *element, const void *data);
+int list_insert_prev(struct dlist *list, struct dlist_element *element,
+		     const void *data);
 
 /** @brief Remove an element from the list
  *
@@ -134,6 +136,7 @@ int list_insert_prev(struct dlist *list, struct dlist_element *element, const vo
  *  @return the function returns 0 if successful
  *  @warning programmer is resposible for removing data after element is removed
  */
-int list_remove_item(struct dlist *list, struct dlist_element *element, void **data);
+int list_remove_item(struct dlist *list, struct dlist_element *element,
+		     void **data);
 
 #endif

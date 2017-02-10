@@ -12,18 +12,18 @@
  * http://stackoverflow.com/questions/15687784/libudev-monitoring-returns-null-pointer-on-raspbian
  */
 
+#include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <pthread.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "debug.h"
-#include "queue.h"
 #include "modeset.h"
+#include "queue.h"
 #include "udev_helper.h"
 
 /* Pthread mutex used to protect condition variable */
@@ -42,17 +42,15 @@ static int daemonize()
 
 	pid = fork();
 	if (pid < 0) { /* Failed to create fork */
-		logger_log(LOG_LVL_ERROR,"Failed to fork");
+		logger_log(LOG_LVL_ERROR, "Failed to fork");
 		return -1;
 	}
 
 	/* Gracefully exit parent */
-	if (pid > 0)
-		exit(EXIT_SUCCESS);
+	if (pid > 0) exit(EXIT_SUCCESS);
 
 	/* Let child become session leader*/
-	if (setsid() < 0)
-		return -1;
+	if (setsid() < 0) return -1;
 
 	/* Ignore signals */
 	signal(SIGCHLD, SIG_IGN);
@@ -60,18 +58,16 @@ static int daemonize()
 
 	pid = fork();
 	if (pid < 0) {
-		logger_log(LOG_LVL_ERROR,
-			   "Failed to create second fork");
+		logger_log(LOG_LVL_ERROR, "Failed to create second fork");
 		return -1;
 	}
 
 	/* Gracefully exit second parent */
-	if (pid > 0)
-		exit(EXIT_SUCCESS);
+	if (pid > 0) exit(EXIT_SUCCESS);
 	umask(0);
 
 	/* Close open file discriptors */
-	for (x = sysconf(_SC_OPEN_MAX); x>=0; x--) {
+	for (x = sysconf(_SC_OPEN_MAX); x >= 0; x--) {
 		close(x);
 	}
 	return 0;
@@ -81,10 +77,10 @@ void *udev_thread_handler(void *data)
 {
 	struct udev *udev = NULL;
 	struct udev_monitor *mon = NULL;
-	struct queue *udev_queue = (struct queue*)data;
+	struct queue *udev_queue = (struct queue *)data;
 	udev = udev_new();
 	if (!udev) {
-		logger_log(LOG_LVL_ERROR,"Failed to create udev instance");
+		logger_log(LOG_LVL_ERROR, "Failed to create udev instance");
 		return 0;
 	}
 	mon = setup_udev_monitor(udev, "drm");
@@ -92,25 +88,27 @@ void *udev_thread_handler(void *data)
 		/* TODO: remove udev struct */
 		return 0;
 	}
-	logger_log(LOG_LVL_OK,"Udev initialisation ok");
+	logger_log(LOG_LVL_OK, "Udev initialisation ok");
 
 	int fd = udev_monitor_get_fd(mon);
 	while (1) {
 		fd_set fds;
 		FD_ZERO(&fds);
-		FD_SET(fd,&fds);
-		int ret = select(fd+1,&fds,NULL,NULL,NULL);
-		if (ret > 0 && FD_ISSET(fd,&fds)) {
+		FD_SET(fd, &fds);
+		int ret = select(fd + 1, &fds, NULL, NULL, NULL);
+		if (ret > 0 && FD_ISSET(fd, &fds)) {
 			struct udev_device *dev =
-				udev_monitor_receive_device(mon);
+			    udev_monitor_receive_device(mon);
 			if (dev == NULL) {
-				logger_log(LOG_LVL_ERROR,"Failed to retrieve device\n");
+				logger_log(LOG_LVL_ERROR,
+					   "Failed to retrieve device\n");
 				continue;
 			}
-			
-			/* Push data to the udev queue that is handled by main thread*/
+
+			/* Push data to the udev queue that is handled by main
+			 * thread*/
 			pthread_mutex_lock(&cond_mutex);
-				queue_push(udev_queue,(void*)dev);
+			queue_push(udev_queue, (void *)dev);
 			pthread_mutex_unlock(&cond_mutex);
 		}
 	}
@@ -129,7 +127,7 @@ int main(int argc, char **argv)
 
 #ifndef DEBUG
 	if (daemonize() < 0) {
-		logger_log(LOG_LVL_ERROR,"Failed to daemonize");
+		logger_log(LOG_LVL_ERROR, "Failed to daemonize");
 		return -1;
 	}
 	logger_set_file_logging("log.txt");
@@ -141,33 +139,36 @@ int main(int argc, char **argv)
 		retval = -1;
 		goto end;
 	}
-	logger_log(LOG_LVL_INFO,"Populating DRM connector list");
+	logger_log(LOG_LVL_INFO, "Populating DRM connector list");
 	connectors = populate_drm_conn_list("/dev/dri/card0");
 	if (!connectors) {
-		logger_log(LOG_LVL_ERROR,"Failed to retrieve connectors");
+		logger_log(LOG_LVL_ERROR, "Failed to retrieve connectors");
 		retval = -1;
 		goto end;
 	}
-	logger_log(LOG_LVL_OK,"List populated");
+	logger_log(LOG_LVL_OK, "List populated");
 
 	/* Create pthread for udev */
-	if (pthread_create(&udev_thread, NULL, udev_thread_handler, (void*)udev_queue) < 0) {
+	if (pthread_create(
+		&udev_thread, NULL, udev_thread_handler, (void *)udev_queue) <
+	    0) {
 		logger_log(LOG_LVL_ERROR, "Failed to create pthread");
 		goto end;
 	}
 
 	/* While wait for condition from udev*/
 	/* Trigger DRM comparision when signal is received from udev */
-	while(1) {
+	while (1) {
 
 		pthread_mutex_lock(&cond_mutex);
-			if (QUEUE_SIZE(udev_queue) != 0) {
-				logger_log(LOG_LVL_INFO,"new items added");
-				void *data;
-				queue_pop(udev_queue,&data);
-				udev_device_unref((struct udev_device*)data);
-			}
+		if (QUEUE_SIZE(udev_queue) != 0) {
+			logger_log(LOG_LVL_INFO, "new items added");
+			void *data;
+			queue_pop(udev_queue, &data);
+			udev_device_unref((struct udev_device *)data);
+		}
 		pthread_mutex_unlock(&cond_mutex);
 	}
-end:	return retval;
+end:
+	return retval;
 }

@@ -8,7 +8,6 @@
 
 #include "udev_helper.h"
 
-
 /* ---------------------------------------------------------------------------*/
 /**
  * @Brief  Setup a new udev monitor for a given subsystem
@@ -22,13 +21,13 @@
 struct udev_monitor *setup_udev_monitor(struct udev *udev, char *subsystem)
 {
 	struct udev_monitor *mon = NULL;
-	mon = udev_monitor_new_from_netlink(udev,"udev");
+	mon = udev_monitor_new_from_netlink(udev, "udev");
 	if (!mon) {
 		logger_log(LOG_LVL_ERROR, "Failed to create monitor");
 		return NULL;
 	}
-	if (udev_monitor_filter_add_match_subsystem_devtype(mon, subsystem,
-							    NULL) < 0) {
+	if (udev_monitor_filter_add_match_subsystem_devtype(
+		mon, subsystem, NULL) < 0) {
 		logger_log(LOG_LVL_ERROR, "Failed to setup filter");
 		return NULL;
 	}
