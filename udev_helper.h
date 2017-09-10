@@ -6,12 +6,13 @@
  * @date 2017-01-18
  */
 
-#include <libudev.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <libudev.h>
 #include <sys/select.h>
+#include <stdlib.h>
 
 #include "debug.h"
+
 
 /* ---------------------------------------------------------------------------*/
 /**

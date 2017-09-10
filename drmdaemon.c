@@ -29,9 +29,6 @@
 /* Pthread mutex used to protect condition variable */
 pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/* Pthead condition used for main to wait for a hotplug */
-pthread_cond_t trigger_drm = PTHREAD_COND_INITIALIZER;
-
 /* Uncomment to run without daemon and console logging */
 #define DEBUG
 
