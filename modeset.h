@@ -8,17 +8,17 @@
  * TODO: Add way to set resolution
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "debug.h"
 #include <fcntl.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
-#include <pthread.h>
-#include "debug.h"
 
-//#define DEBUG
+#define DEBUG
 
 static pthread_mutex_t _drm_obj_mutex;
 
@@ -27,11 +27,8 @@ static pthread_mutex_t _drm_obj_mutex;
  * @Brief  Lookup table for DRM connection status
  */
 /* ---------------------------------------------------------------------------*/
-static const char * const drm_states[] = {
-	"None",
-	"Connected",
-	"Disconnected",
-	"Unkown connection",
+static const char *const drm_states[] = {
+    "None", "Connected", "Disconnected", "Unkown connection",
 };
 
 /* ---------------------------------------------------------------------------*/
@@ -39,24 +36,24 @@ static const char * const drm_states[] = {
  * @Brief  Lookup table for DRM output names
  */
 /* ---------------------------------------------------------------------------*/
-static const char * const drm_output_names[] = {
-	"None",
-	"VGA",
-	"DVI-I",
-	"DVI-D",
-	"DVI-A",
-	"Composite",
-	"SVIDEO",
-	"LVDS",
-	"Component",
-	"DIN",
-	"DP",
-	"HDMI-A",
-	"HDMI-B",
-	"TV",
-	"eDP",
-	"Virtual",
-	"DSI",
+static const char *const drm_output_names[] = {
+    "None",
+    "VGA",
+    "DVI-I",
+    "DVI-D",
+    "DVI-A",
+    "Composite",
+    "SVIDEO",
+    "LVDS",
+    "Component",
+    "DIN",
+    "DP",
+    "HDMI-A",
+    "HDMI-B",
+    "TV",
+    "eDP",
+    "Virtual",
+    "DSI",
 };
 
 /* ---------------------------------------------------------------------------*/
@@ -113,7 +110,6 @@ int init_drm_handler();
  */
 /* ---------------------------------------------------------------------------*/
 struct drm_connector_obj *populate_drm_conn_list(char *device_name);
-
 
 /* ---------------------------------------------------------------------------*/
 /**

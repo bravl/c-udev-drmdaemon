@@ -13,31 +13,31 @@
  *
  */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 
 #define MAX_HDR_LEN 64
 
 /**< Loglevel defines */
-#define LOG_LVL_INFO    0x01
+#define LOG_LVL_INFO 0x01
 #define LOG_LVL_WARNING 0x02
-#define LOG_LVL_ERROR   0x04
-#define LOG_LVL_OK      0x08
+#define LOG_LVL_ERROR 0x04
+#define LOG_LVL_OK 0x08
 
 #define LOG_LVL_ALL LOG_LVL_INFO | LOG_LVL_WARNING | LOG_LVL_ERROR | LOG_LVL_OK
 
 /**< Logger enable colors */
-#define KNRM  "\x1B[0m"
-#define KRED  "\x1B[31m"
-#define KGRN  "\x1B[32m"
-#define KYEL  "\x1B[33m"
-#define KBLU  "\x1B[34m"
-#define KMAG  "\x1B[35m"
-#define KCYN  "\x1B[36m"
-#define KWHT  "\x1B[37m"
+#define KNRM "\x1B[0m"
+#define KRED "\x1B[31m"
+#define KGRN "\x1B[32m"
+#define KYEL "\x1B[33m"
+#define KBLU "\x1B[34m"
+#define KMAG "\x1B[35m"
+#define KCYN "\x1B[36m"
+#define KWHT "\x1B[37m"
 
 /**
  *TODO: Add defines for easy logging
